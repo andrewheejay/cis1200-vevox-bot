@@ -31,6 +31,7 @@ def test_parse_ignores_ping():
 def test_is_open():
     assert not is_open("results")
     assert not is_open("none")
+    assert not is_open("closing")  # Vevox: open -> closing -> closed -> results
     assert is_open("open") and is_open("voting")
 
 
