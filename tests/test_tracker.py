@@ -83,3 +83,12 @@ def test_no_correction_for_opinion(tracker):
     pick = tracker.choose(6, at(10, 21))
     assert tracker.correct(pick, 6, [81.0, 17.0, 2.0, 0, 0, 0], opened_at=at(10, 21)) is None
 
+
+
+def test_no_correction_when_the_class_falls_for_a_trick_question(tracker):
+    """Wed 10/21, slide 27 (x == z on two string literals): answer 1 ("true(!)"), class went 37/60 for false."""
+    tracker.pointer = 3
+    pick = tracker.choose(6, datetime(2026, 10, 21, 11, 1, 53, tzinfo=ET))
+    assert (LEC22.polls[pick.index].page, pick.answer) == (27, 1)
+    assert tracker.correct(pick, 6, [37.0, 60.0, 1.0, 2.0, 0, 0], opened_at=at(11, 1)) is None
+    assert LEC22.polls[tracker.pointer].page == 39

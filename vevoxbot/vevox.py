@@ -7,21 +7,20 @@ from pathlib import Path
 
 from .config import SESSION_URL
 
-CLOSED_STATES = {"results", "closed", "ended", "finished", "none"}
+CLOSED_STATES = {"closing", "results", "closed", "ended", "finished", "none"}  # seen: open, closing, closed, results
 SECRET_KEYS = re.compile(r'"(secret|key|deviceId|anonymousDeviceId|userSessionId|email|thirdPartyUserId|appId)"\s*:\s*"[^"]*"')
 
-# Visible elements left of the Results card whose whole text is one digit are the answer buttons.
+CHOICE = '[data-testid="question-choice"]'
+# The open poll's choices (only rendered while it is open), numbered by their text, else by position.
 FIND_BUTTONS = """() => {
-  const best = {};
-  for (const e of document.querySelectorAll('body *')) {
-    const t = (e.innerText || '').trim();
-    if (!/^[1-9]$/.test(t) || e.children.length > 2) continue;
+  const out = [];
+  document.querySelectorAll('[data-testid="question-choice"]').forEach((e, i) => {
     const r = e.getBoundingClientRect();
-    if (r.width < 8 || r.height < 8 || r.x + r.width / 2 > 770) continue;
-    const c = {n: +t, x: r.x + r.width / 2, y: r.y + r.height / 2, pointer: getComputedStyle(e).cursor === 'pointer'};
-    if (!best[t] || (c.pointer && !best[t].pointer)) best[t] = c;
-  }
-  return Object.values(best).sort((a, b) => a.n - b.n);
+    if (r.width < 4 || r.height < 4) return;
+    const t = (e.innerText || '').trim();
+    out.push({n: /^[1-9]$/.test(t) ? +t : i + 1, i, x: r.x + r.width / 2, y: r.y + r.height / 2});
+  });
+  return out;
 }"""
 
 
@@ -121,7 +120,7 @@ class VevoxPage:
         self.page.wait_for_timeout(seconds * 1000)
 
     def dismiss_dialogs(self) -> None:
-        ok = self.page.get_by_role("button", name="OK", exact=True)
+        ok = self.page.get_by_role("button", name=re.compile(r"^\s*ok\s*$", re.I))  # the Profile pop-up says "Ok"
         if ok.count() and ok.first.is_visible():
             ok.first.click(timeout=2000)
 
@@ -136,7 +135,10 @@ class VevoxPage:
         target = next((b for b in self._buttons() if b["n"] == n), None)
         if not target:
             return False
-        self.page.mouse.click(target["x"], target["y"])
+        try:  # a locator click scrolls the choice into view first; the sixth sits below the fold
+            self.page.locator(CHOICE).nth(target["i"]).click(timeout=3000)
+        except Exception:
+            self.page.mouse.click(target["x"], target["y"])
         self.page.wait_for_timeout(500)
         submit = self.page.get_by_role("button", name=re.compile(r"^\s*(submit|send|vote)\s*$", re.I))
         if submit.count() and submit.first.is_visible():
