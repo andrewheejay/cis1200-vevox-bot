@@ -98,3 +98,8 @@ def test_answer_given_as_option_number():
 def test_numeric_option_text_wins_over_number():
     page = "What is ans?\n1. 2\n2. 3\n3. 1\nAnswer: 3\n"
     assert parse_polls([page])[0].answer == 2
+
+
+def test_uppercase_answer_label():
+    page = "What does f return?\n1. 17\n2. something else\n3. sometimes 17\n4. f is ill typed\nANSWER: 3\n"
+    assert parse_polls([page])[0].answer == 3

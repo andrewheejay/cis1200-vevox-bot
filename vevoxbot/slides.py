@@ -8,7 +8,7 @@ from .config import BLIND_ANSWER, OPINION_ANSWER, SLIDES_URL
 from .models import Poll
 
 OPTION = re.compile(r"^\s*(\d)\.\s+(\S.*)$")
-ANSWER = re.compile(r"Answer:\s*(.+)")
+ANSWER = re.compile(r"Answer:\s*(.+)", re.I)
 COLUMN_GAP = re.compile(r"\s{3,}")
 YOU = re.compile(r"\byour?\b", re.I)
 TRUE_FALSE = re.compile(r"^\s*true or false\b", re.I | re.M)
