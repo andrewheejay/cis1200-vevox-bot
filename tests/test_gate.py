@@ -21,11 +21,13 @@ def test_gate_rejects_wrong_days_and_late_starts():
     assert not should_run_class(utc(2026, 10, 21, 15, 30))  # 11:30 ET, class is over
 
 
-def test_gate_evening():
-    assert should_run_evening(utc(2026, 10, 21, 1, 0))  # Tue 21:00 EDT
-    assert should_run_evening(utc(2026, 11, 4, 2, 0))  # Tue 21:00 EST
-    assert not should_run_evening(utc(2026, 11, 4, 1, 0))  # Tue 20:00 EST, too early
-    assert not should_run_evening(utc(2026, 11, 5, 2, 0))  # Wed 21:00 EST, no class Thursday
+def test_gate_evening_runs_once_per_evening():
+    # crons fire at 01:17 and 02:17 UTC; exactly one lands in the window in each season
+    assert should_run_evening(utc(2026, 10, 21, 1, 17))  # Tue 21:17 EDT
+    assert not should_run_evening(utc(2026, 10, 21, 2, 17))  # Tue 22:17 EDT
+    assert not should_run_evening(utc(2026, 11, 4, 1, 17))  # Tue 20:17 EST
+    assert should_run_evening(utc(2026, 11, 4, 2, 17))  # Tue 21:17 EST
+    assert not should_run_evening(utc(2026, 11, 5, 2, 17))  # Wed 21:17 EST, no class Thursday
 
 
 def test_next_class_day():

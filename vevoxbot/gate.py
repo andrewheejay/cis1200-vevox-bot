@@ -7,7 +7,7 @@ from .config import CLASS_DAYS, ET, REPO_DIR
 
 CLASS_WINDOW = (time(9, 30), time(11, 0))  # a late cron firing still gets to answer the rest of class
 EVENING_DAYS = {6, 1, 3}  # Sun, Tue, Thu: the evening before each class
-EVENING_WINDOW = (time(20, 30), time(22, 30))
+EVENING_WINDOW = (time(20, 30), time(22, 0))
 
 
 def should_run_class(now_utc: datetime) -> bool:
