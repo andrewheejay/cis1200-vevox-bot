@@ -34,7 +34,7 @@ Same code: `caffeinate -ims uv run bot run` on the morning of class (Mac plugged
 `bot run --date YYYY-MM-DD --dry-run --no-wait` with `VEVOXBOT_MINUTES=2` is a safe smoke test.
 
 ## Rules it follows
-- Polls show only buttons 1..N, so it keeps its place in the deck: next unanswered question, preferring one
-  with N options; a question ~20 min overdue counts as skipped; if the class clearly picked a different
-  answer it re-syncs to the slide question with that answer. Opinion polls → 2, no idea → 1.
+- Polls show only generic buttons (1..5 or so), so it keeps its place in the deck by order and time: the next
+  unanswered question; one ~20 min overdue counts as skipped; if the class clearly picked a different answer
+  it re-syncs to the nearby slide question with that answer. Opinion polls → 2, no idea → 1.
 - One vote per poll; it never changes a submitted answer.
