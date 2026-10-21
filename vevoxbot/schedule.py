@@ -20,11 +20,13 @@ def parse_rows(rows: list[str], year: int) -> list[Lecture]:
     return lectures
 
 
+def find_row(day: date, lectures: list[Lecture]) -> Lecture | None:
+    return next((lec for lec in lectures if lec.day == day), None)
+
+
 def lecture_on(day: date, lectures: list[Lecture]) -> Lecture | None:
-    for lec in lectures:
-        if lec.day == day:
-            return lec if lec.is_class else None
-    return None
+    lec = find_row(day, lectures)
+    return lec if lec and lec.is_class else None
 
 
 ROWS_JS = """() => [...document.querySelectorAll('tr:not(.homework)')]

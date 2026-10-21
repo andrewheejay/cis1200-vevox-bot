@@ -55,13 +55,15 @@ def claude_polls(pages: list[str], run=subprocess.run) -> list[Poll]:
     return validate_polls(raw, len(pages))
 
 
-def build_sheet(lecture: Lecture, pdf: Path, run=subprocess.run) -> Sheet:
+def build_sheet(lecture: Lecture, pdf: Path, run=subprocess.run, use_claude: bool = True) -> Sheet:
     pages = pdf_pages(pdf)
     parsed = parse_polls(pages)
-    try:
-        polls, source = claude_polls(pages, run=run), "claude"
-        if not polls and parsed:
-            polls, source = parsed, "parser"
-    except (SheetError, OSError, subprocess.TimeoutExpired):
-        polls, source = parsed, "parser"
+    polls, source = parsed, "parser"
+    if use_claude:
+        try:
+            from_claude = claude_polls(pages, run=run)
+            if from_claude or not parsed:
+                polls, source = from_claude, "claude"
+        except Exception:  # any Claude trouble (missing CLI, limits, odd output) -> the parser's sheet
+            pass
     return Sheet(lecture=lecture.number, day=lecture.day, pages=len(pages), source=source, polls=polls)

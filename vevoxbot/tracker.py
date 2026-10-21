@@ -1,12 +1,13 @@
 """Keeps the bot's place in the answer sheet when polls arrive with only numbered buttons."""
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .config import BLIND_ANSWER, CLASS_LEN, SKIP_AFTER
 from .models import Sheet
 
 MIN_TOP_PCT = 40.0  # the class's favourite must have at least this share...
 MIN_LEAD = 15.0  # ...and beat the bot's answer by this many points before we trust it
+NEAR = timedelta(minutes=15)  # how far ahead a button-count match may jump
 
 
 @dataclass
@@ -26,14 +27,24 @@ class Tracker:
         return self.class_start + CLASS_LEN * (self.sheet.polls[i].page / self.sheet.pages)
 
     def choose(self, n_buttons: int, now: datetime) -> Pick:
+        """Next unanswered question if its option count fits; else a fitting one due soon; else a
+        fitting one we'd written off as skipped (the professor ran late); else a blind guess."""
         polls = self.sheet.polls
-        live = [i for i in range(self.pointer, len(polls)) if now - self.expected(i) < SKIP_AFTER]
-        if not live:
+        ahead = range(self.pointer, len(polls))
+        live = [i for i in ahead if now - self.expected(i) < SKIP_AFTER]
+        if not live and not any(polls[i].choices == n_buttons for i in ahead):
             return Pick(None, BLIND_ANSWER, "no match")
-        i = next((i for i in live if polls[i].choices == n_buttons), live[0])
+        fits = [i for i in ahead if polls[i].choices == n_buttons]
+        if live and polls[live[0]].choices == n_buttons:
+            i, why = live[0], "next in order"
+        elif near := [i for i in fits if i in live and self.expected(i) - now <= NEAR]:
+            i, why = near[0], "button count matches a question due soon"
+        elif late := [i for i in fits if i not in live]:
+            i, why = late[-1], "button count matches an overdue question"
+        else:
+            return Pick(None, BLIND_ANSWER, "no match nearby")
         self.pointer = i + 1
         answer = polls[i].answer if polls[i].answer <= n_buttons else BLIND_ANSWER
-        why = "button count matches" if polls[i].choices == n_buttons else "next in order, button count differs"
         return Pick(i, answer, why)
 
     def correct(self, pick: Pick, n_buttons: int, percentages: list[float], opened_at: datetime) -> int | None:

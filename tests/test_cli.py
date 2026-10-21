@@ -33,3 +33,72 @@ def test_run_skipped_date(no_browser, monkeypatch, capsys):
 def test_sheet_slides_not_posted(no_browser, capsys):
     assert cli.main(["sheet", "--date", "2026-10-23"]) == 3
     assert "not posted" in capsys.readouterr().out.lower()
+
+
+class FakeVevox:
+    opened = 0
+
+    def __init__(self, *a, **kw):
+        self.latest = None
+
+    def __enter__(self):
+        FakeVevox.opened += 1
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def signed_in(self):
+        return True
+
+    def wait(self, s):
+        pass
+
+    def buttons(self):
+        return []
+
+    def vote(self, n):
+        return False
+
+
+@pytest.fixture
+def fake_vevox(monkeypatch, tmp_path):
+    FakeVevox.opened = 0
+    monkeypatch.setattr(cli, "VevoxPage", FakeVevox)
+    monkeypatch.setattr(cli, "RUNS", tmp_path / "runs")
+    monkeypatch.setattr(cli, "SHEETS", tmp_path / "sheets")
+    monkeypatch.setenv("SKIP_DATES", "")
+    monkeypatch.setenv("VEVOXBOT_MINUTES", "0.005")
+
+
+def test_run_missing_row_still_runs(fake_vevox, monkeypatch):
+    monkeypatch.setattr(cli, "fetch_rows", lambda: [])  # schedule page rendered empty
+    cli.main(["run", "--date", "2026-10-23", "--no-wait"])
+    assert FakeVevox.opened == 1
+
+
+def test_run_schedule_crash_still_runs(fake_vevox, monkeypatch):
+    def broken():
+        raise TimeoutError("schedule page timed out")
+
+    monkeypatch.setattr(cli, "fetch_rows", broken)
+    cli.main(["run", "--date", "2026-10-23", "--no-wait"])
+    assert FakeVevox.opened == 1
+
+
+def test_run_sheet_crash_still_runs(fake_vevox, monkeypatch):
+    monkeypatch.setattr(cli, "fetch_rows", lambda: ROWS)
+
+    def broken(*a, **kw):
+        raise OSError("download failed")
+
+    monkeypatch.setattr(cli, "download_slides", broken)
+    cli.main(["run", "--date", "2026-10-21", "--no-wait"])
+    assert FakeVevox.opened == 1
+
+
+def test_run_without_any_poll_updates_is_flagged(fake_vevox, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "fetch_rows", lambda: ROWS)
+    monkeypatch.setattr(cli, "load_or_build", lambda day, lec, use_claude: cli.Sheet(22, lec.day, 40, "manual", []))
+    assert cli.main(["run", "--date", "2026-10-21", "--no-wait"]) == 1
+    assert "never received" in capsys.readouterr().out.lower()

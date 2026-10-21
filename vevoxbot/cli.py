@@ -7,11 +7,11 @@ import tempfile
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
-from .config import CLASS_START, ET, REPO_DIR, RUN_END, RUN_START, SESSION_URL, state_path
+from .config import CLASS_DAYS, CLASS_START, ET, REPO_DIR, RUN_END, RUN_START, SESSION_URL, state_path
 from .gate import next_class_day, set_skip, skip_dates
 from .live import run_class, summary_markdown
-from .models import Sheet
-from .schedule import fetch_rows, lecture_on, parse_rows
+from .models import Lecture, Sheet
+from .schedule import fetch_rows, find_row, lecture_on, parse_rows
 from .sheet import build_sheet
 from .slides import download_slides
 from .tracker import Tracker
@@ -98,17 +98,42 @@ def cmd_sheet(args) -> int:
     return 0
 
 
-def load_or_build(day: date, lec) -> Sheet:
+def load_or_build(day: date, lec: Lecture, use_claude: bool) -> Sheet:
     path = SHEETS / f"{day}.json"
     if path.exists():
         return Sheet.load(path)
     if lec.number is not None:
         with tempfile.TemporaryDirectory() as tmp:
-            sheet = build_sheet(lec, download_slides(lec.number, Path(tmp)))
+            sheet = build_sheet(lec, download_slides(lec.number, Path(tmp)), use_claude=use_claude)
         sheet.save(path)
         return sheet
     log("No slides posted: every poll gets the blind answer.")
     return Sheet(lecture=0, day=day, pages=1, source="none", polls=[])
+
+
+def class_lecture(day: date) -> Lecture | None:
+    """The class to attend on `day`, or None if the schedule says there is none. A schedule page that
+    fails to load or lacks the row is not proof of "no class", so on a class weekday we attend anyway."""
+    try:
+        row = find_row(day, parse_rows(fetch_rows(), day.year))
+    except Exception as e:
+        log(f"schedule unavailable ({e!r}); attending anyway")
+        row = None
+    if row is not None:
+        return row if row.is_class else None
+    if day.weekday() not in CLASS_DAYS:
+        return None
+    log("today isn't on the schedule page; attending anyway")
+    return Lecture(day, "not on schedule", None)
+
+
+def write_summary(day: date, summary: str) -> None:
+    RUNS.mkdir(exist_ok=True)
+    (RUNS / f"{day}.md").write_text(summary)
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+            f.write(summary)
+    print(summary)
 
 
 def cmd_run(args) -> int:
@@ -116,31 +141,42 @@ def cmd_run(args) -> int:
     if day in skip_dates():
         print(f"{day}: bot switched off for this class.")
         return 0
-    lec = lecture_for(day)
+    lec = class_lecture(day)
     if lec is None:
         print(f"{day}: no class.")
         return 0
-    sheet = load_or_build(day, lec)
+    try:  # never call Claude once class has started: it can take minutes
+        sheet = load_or_build(day, lec, use_claude=datetime.now(ET) < at(day, RUN_START))
+    except Exception as e:
+        log(f"couldn't build the answer sheet ({e!r}); every poll gets the blind answer")
+        sheet = Sheet(lecture=0, day=day, pages=1, source="none", polls=[])
     log(f"lec{sheet.lecture:02d}: {len(sheet.polls)} polls on the sheet (by {sheet.source})")
     minutes = os.environ.get("VEVOXBOT_MINUTES")  # for test runs: stop after N minutes instead of at 11:20
     end = datetime.now(ET) + timedelta(minutes=float(minutes)) if minutes else at(day, RUN_END)
     RUNS.mkdir(exist_ok=True)
-    with VevoxPage(state_path(), log=log, record=RUNS / f"{day}-frames.jsonl") as v:
-        if not v.signed_in():
-            log("LOGIN EXPIRED: Vevox sent the bot to PennKey. Run: bot login --upload")
-            return 2
-        log("signed in to Vevox")
-        while not args.no_wait and datetime.now(ET) < at(day, RUN_START):
-            v.wait(min(30, (at(day, RUN_START) - datetime.now(ET)).total_seconds()))
-        tracker = Tracker(sheet, class_start=at(day, CLASS_START))
-        records = run_class(v, tracker, end, now=lambda: datetime.now(ET), sleep=v.wait, log=log, dry_run=args.dry_run)
-    summary = summary_markdown(records, sheet)
-    (RUNS / f"{day}.md").write_text(summary)
-    if os.environ.get("GITHUB_STEP_SUMMARY"):
-        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
-            f.write(summary)
-    print(summary)
-    return 1 if not args.dry_run and any(not r.voted for r in records) else 0
+    records, code = [], 0
+    try:
+        with VevoxPage(state_path(), log=log, record=RUNS / f"{day}-frames.jsonl") as v:
+            if not v.signed_in():
+                log("LOGIN EXPIRED: Vevox sent the bot to PennKey. Run: bot login --upload")
+                return 2
+            log("signed in to Vevox")
+            while not args.no_wait and datetime.now(ET) < at(day, RUN_START):
+                v.wait(min(30, (at(day, RUN_START) - datetime.now(ET)).total_seconds()))
+            tracker = Tracker(sheet, class_start=at(day, CLASS_START))
+            records = run_class(v, tracker, end, now=lambda: datetime.now(ET), sleep=v.wait, log=log,
+                                dry_run=args.dry_run)
+            if v.latest is None:
+                log("WARNING: never received a poll update from Vevox during the run")
+                code = 1
+    except Exception as e:
+        log(f"run crashed: {e!r}")
+        code = 2
+    finally:
+        write_summary(day, summary_markdown(records, sheet))
+    if not args.dry_run and any(not r.voted for r in records):
+        code = code or 1
+    return code
 
 
 def cmd_off(args) -> int:

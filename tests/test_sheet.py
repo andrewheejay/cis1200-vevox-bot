@@ -77,3 +77,16 @@ def test_empty_claude_result_uses_parser(monkeypatch):
     monkeypatch.setattr(sheet_mod, "pdf_pages", lambda pdf: PAGES)
     s = build_sheet(LECTURE, Path("lec22.pdf"), run=fake_run(envelope("[]")))
     assert s.source == "parser" and len(s.polls) == 1
+
+
+def test_build_sheet_null_result_falls_back(monkeypatch):
+    monkeypatch.setattr(sheet_mod, "pdf_pages", lambda pdf: PAGES)
+    out = json.dumps({"type": "result", "is_error": True, "result": None})
+    assert build_sheet(LECTURE, Path("lec22.pdf"), run=fake_run(out)).source == "parser"
+
+
+def test_build_sheet_without_claude(monkeypatch):
+    monkeypatch.setattr(sheet_mod, "pdf_pages", lambda pdf: PAGES)
+    run = fake_run(envelope("[]"))
+    s = build_sheet(LECTURE, Path("lec22.pdf"), run=run, use_claude=False)
+    assert s.source == "parser" and run.calls == []

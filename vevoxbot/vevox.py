@@ -79,19 +79,23 @@ class VevoxPage:
         self._ctx = self._browser.new_context(storage_state=str(self.state_file), viewport={"width": 1280, "height": 720})
         self.page = self._ctx.new_page()
         self.page.on("websocket", lambda ws: ws.on("framereceived", self._on_frame))
+        self._load()
+        return self
+
+    def _load(self) -> None:
         self.page.goto(SESSION_URL)
         deadline = time.time() + 25
-        while time.time() < deadline and not self._settled():
+        while time.time() < deadline and not (self._on_login_page() or self.signed_in()):
             self.page.wait_for_timeout(500)
         self.dismiss_dialogs()
-        return self
+
+    def recover(self) -> None:
+        """Reload the session page after repeated errors (keeps the websocket listener)."""
+        self._load()
 
     def __exit__(self, *exc):
         self._browser.close()
         self._pw.stop()
-
-    def _settled(self) -> bool:
-        return not self.signed_in() or self.page.get_by_text("Exit Session").count() > 0
 
     def _on_frame(self, payload) -> None:
         text = payload if isinstance(payload, str) else payload.decode("utf-8", "replace")
@@ -104,9 +108,13 @@ class VevoxPage:
                 self.log(f"poll {update.poll_id}: {update.state} ({update.n_choices} choices)")
             self.latest = update
 
-    def signed_in(self) -> bool:
+    def _on_login_page(self) -> bool:
         url = self.page.url
-        return url.startswith("https://vevox.app") and "pennkey" not in url and "weblogin" not in url
+        return not url.startswith("https://vevox.app") or "pennkey" in url or "weblogin" in url
+
+    def signed_in(self) -> bool:
+        """Positive evidence: we're on Vevox and the participant menu ("Exit Session") is showing."""
+        return not self._on_login_page() and self.page.get_by_text("Exit Session").count() > 0
 
     def wait(self, seconds: float) -> None:
         """Sleep while letting Playwright deliver websocket events (time.sleep would starve them)."""
@@ -115,7 +123,7 @@ class VevoxPage:
     def dismiss_dialogs(self) -> None:
         ok = self.page.get_by_role("button", name="OK", exact=True)
         if ok.count() and ok.first.is_visible():
-            ok.first.click()
+            ok.first.click(timeout=2000)
 
     def _buttons(self) -> list[dict]:
         return self.page.evaluate(FIND_BUTTONS)
@@ -132,7 +140,7 @@ class VevoxPage:
         self.page.wait_for_timeout(500)
         submit = self.page.get_by_role("button", name=re.compile(r"^\s*(submit|send|vote)\s*$", re.I))
         if submit.count() and submit.first.is_visible():
-            submit.first.click()
+            submit.first.click(timeout=2000)
         return True
 
     def screenshot(self, path: Path) -> None:

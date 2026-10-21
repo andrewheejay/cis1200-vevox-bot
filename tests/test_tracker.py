@@ -36,13 +36,19 @@ def test_in_order(tracker):
 
 
 def test_skips_by_button_count(tracker):
-    pick = tracker.choose(3, at(10, 30))
+    pick = tracker.choose(3, at(10, 40))  # p4 still live (19 min overdue), p25 due 10:52:30
     assert (pick.index, pick.answer) == (1, 1)
     assert tracker.pointer == 2
 
 
 def test_skip_rule(tracker):
-    pick = tracker.choose(6, at(10, 45))  # p4 expected 10:21, 24 min overdue
+    # p4 (due 10:21) is 24 min overdue, but a 6-button poll is still recognized as that late HW poll
+    pick = tracker.choose(6, at(10, 45))
+    assert (pick.index, pick.answer) == (0, 2)
+
+
+def test_skipped_question_passed_over(tracker):
+    pick = tracker.choose(3, at(10, 45))  # p4 skipped, p25 due 10:52:30
     assert (pick.index, pick.answer) == (1, 1)
 
 
@@ -51,10 +57,10 @@ def test_exhausted_sheet_votes_blind(tracker):
     assert tracker.choose(4, at(11, 15)) == Pick(None, 1, "no match")
 
 
-def test_answer_clamped_to_buttons(tracker):
+def test_mismatched_count_votes_blind_and_keeps_place(tracker):
     tracker.pointer = 4
-    pick = tracker.choose(3, at(11, 12))  # p39's answer 4 doesn't exist with 3 buttons
-    assert (pick.index, pick.answer) == (4, 1)
+    pick = tracker.choose(3, at(11, 12))  # only 4-option questions left
+    assert pick == Pick(None, 1, "no match nearby") and tracker.pointer == 4
 
 
 def test_correction_moves_back(tracker):
@@ -81,3 +87,10 @@ def test_correction_noop_when_class_agrees(tracker):
 def test_no_correction_for_opinion(tracker):
     pick = tracker.choose(6, at(10, 21))
     assert tracker.correct(pick, 6, [81.0, 17.0, 2.0, 0, 0, 0], opened_at=at(10, 21)) is None
+
+
+def test_far_match_not_taken(tracker):
+    # an unplanned 4-button poll early in class must not jump to p39 (due 11:13)
+    pick = tracker.choose(4, at(10, 16))
+    assert pick == Pick(None, 1, "no match nearby") and tracker.pointer == 0
+    assert tracker.choose(6, at(10, 21)).answer == 2  # the HW poll still lines up

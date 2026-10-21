@@ -147,3 +147,39 @@ def test_ws_gets_priority_over_page_scan():
     ])
     records = run(page)
     assert page.votes == [1] and records[0].poll_id == 136
+
+
+class FlakyPage(FakePage):
+    """buttons() blows up for a while, like a page mid-reload."""
+
+    def __init__(self, events, broken_until):
+        super().__init__(events)
+        self.broken_until = broken_until
+        self.recovered = 0
+
+    def buttons(self):
+        if self.t < self.broken_until:
+            raise RuntimeError("Execution context was destroyed")
+        return super().buttons()
+
+    def recover(self):
+        self.recovered += 1
+
+
+def test_exception_in_tick_does_not_stop_voting():
+    page = FlakyPage([
+        (at(10, 21), opened(135, 6), [1, 2, 3, 4, 5, 6]),
+        (at(10, 52), opened(136, 3), [1, 2, 3]),
+    ], broken_until=at(10, 25))
+    records = run(page)
+    assert page.votes[-1] == 1 and records[-1].voted  # the 10:52 poll still got its vote
+    assert page.recovered >= 1
+
+
+def test_keeps_retrying_while_poll_open():
+    page = FakePage([
+        (at(10, 52), PollUpdate(136, "open", 3, None), []),
+        (at(10, 52, 6), ..., [1, 2, 3]),  # buttons only show up 6 s after the announcement
+    ])
+    records = run(page)
+    assert page.votes == [1] and records[0].voted
