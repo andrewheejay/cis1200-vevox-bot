@@ -145,5 +145,9 @@ class VevoxPage:
             submit.first.click(timeout=2000)
         return True
 
+    def voted(self) -> bool:
+        """Is this account's answer already in (from either bot)? Vevox shows it selected: "Thanks! Press CLEAR..." """
+        return self.page.locator(f'{CHOICE}[aria-selected="true"]').count() > 0
+
     def screenshot(self, path: Path) -> None:
         self.page.screenshot(path=str(path))

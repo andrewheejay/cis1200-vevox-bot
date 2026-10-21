@@ -25,6 +25,7 @@ class FakePage:
         self.latest = None
         self._buttons = []
         self.votes = []
+        self.vote_times = []
 
     def now(self):
         return self.t
@@ -45,7 +46,18 @@ class FakePage:
         if n not in self._buttons:
             return False
         self.votes.append(n)
+        self.vote_times.append(self.t)
         return True
+
+    def voted(self):
+        return False
+
+
+class MacAnsweredPage(FakePage):
+    """The Mac got there first: Vevox shows this account's answer as soon as the buttons appear."""
+
+    def voted(self):
+        return bool(self._buttons)
 
 
 def opened(poll_id, n):
@@ -183,3 +195,42 @@ def test_keeps_retrying_while_poll_open():
     ])
     records = run(page)
     assert page.votes == [1] and records[0].voted
+
+
+def test_votes_immediately_by_default():
+    page = FakePage([(at(10, 52), opened(136, 6), [1, 2, 3, 4, 5, 6])])
+    run(page)
+    assert (page.vote_times[0] - at(10, 52)).total_seconds() < 1
+
+
+def test_deferred_vote_waits_then_clicks():
+    """The cloud: nobody else answered, so it clicks once the 5 s are up."""
+    page = FakePage([(at(10, 52), opened(136, 6), [1, 2, 3, 4, 5, 6])])
+    records = run(page, defer=5)
+    assert page.votes == [1] and records[0].voted and not records[0].by_other
+    assert 5 <= (page.vote_times[0] - at(10, 52)).total_seconds() < 7
+
+
+def test_deferred_vote_skipped_when_the_mac_answered():
+    page = MacAnsweredPage([
+        (at(10, 21), opened(135, 6), [1, 2, 3, 4, 5, 6]),
+        (at(10, 22), results(135, [8, 10, 23, 28, 18, 13]), []),
+        (at(10, 58), opened(136, 6), [1, 2, 3, 4, 5, 6]),
+    ])
+    records = run(page, defer=5)
+    assert page.votes == []
+    assert [r.page for r in records] == [4, 25]  # still keeps its place, ready to take over
+    assert all(r.voted and r.by_other for r in records)
+    assert "already in" in summary_markdown(records, LEC22)
+
+
+def test_page_scan_respects_defer():
+    page = FakePage([(at(10, 52), ..., [1, 2, 3, 4, 5, 6])])  # websocket silent
+    run(page, defer=5)
+    assert page.votes == [1] and (page.vote_times[0] - at(10, 52)).total_seconds() >= 5  # slide 25
+
+
+def test_page_scan_skips_when_the_mac_answered():
+    page = MacAnsweredPage([(at(10, 52), ..., [1, 2, 3, 4, 5, 6])])
+    records = run(page, defer=5)
+    assert page.votes == [] and records[0].by_other

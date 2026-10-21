@@ -51,3 +51,10 @@ def test_vote_for_a_missing_choice_clicks_nothing(browser):
     v = vevox_on(browser, "poll_open.html")
     assert not v.vote(7)
     assert v.page.locator('[aria-selected="true"]').count() == 0
+
+
+def test_voted_once_an_answer_is_selected(browser):
+    v = vevox_on(browser, "poll_open.html")
+    assert not v.voted()
+    v.vote(2)
+    assert v.voted()
