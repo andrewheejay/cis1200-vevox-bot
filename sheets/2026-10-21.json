@@ -1,0 +1,50 @@
+{
+  "lecture": 22,
+  "day": "2026-10-21",
+  "pages": 40,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 4,
+      "choices": 6,
+      "answer": 2,
+      "kind": "opinion",
+      "q": "How far along in HW05 are you?"
+    },
+    {
+      "page": 25,
+      "choices": 3,
+      "answer": 1,
+      "kind": "graded",
+      "q": "Value of ans: x.equals(z) for two \"CIS 1200\" literals"
+    },
+    {
+      "page": 26,
+      "choices": 3,
+      "answer": 2,
+      "kind": "graded",
+      "q": "Value of ans: (x == z) where x = x1 + x2 concatenation"
+    },
+    {
+      "page": 27,
+      "choices": 3,
+      "answer": 1,
+      "kind": "graded",
+      "q": "Value of ans: (x == z) for two identical string literals"
+    },
+    {
+      "page": 39,
+      "choices": 4,
+      "answer": 4,
+      "kind": "graded",
+      "q": "Value of ans: uninitialized Counter x; x.inc()"
+    },
+    {
+      "page": 40,
+      "choices": 4,
+      "answer": 3,
+      "kind": "graded",
+      "q": "Value of ans: aliased Counter x and y, inc three times"
+    }
+  ]
+}

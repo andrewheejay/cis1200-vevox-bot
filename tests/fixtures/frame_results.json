@@ -1,0 +1,95 @@
+{
+ "message": "DeviceSessionPollStateVer2",
+ "data": {
+  "sessionId": 1,
+  "currentPoll": {
+   "sessionId": 1,
+   "pollId": 134,
+   "pollState": "results",
+   "questionData": [
+    {
+     "question": {
+      "@type": "DeviceChoiceVoteQuestion",
+      "id": 9,
+      "sessionId": 1,
+      "text": "<p>Choose...</p>",
+      "choices": [
+       {
+        "id": 1001,
+        "questionId": 9,
+        "text": "1"
+       },
+       {
+        "id": 1002,
+        "questionId": 9,
+        "text": "2"
+       },
+       {
+        "id": 1003,
+        "questionId": 9,
+        "text": "3"
+       },
+       {
+        "id": 1004,
+        "questionId": 9,
+        "text": "4"
+       },
+       {
+        "id": 1005,
+        "questionId": 9,
+        "text": "5"
+       },
+       {
+        "id": 1006,
+        "questionId": 9,
+        "text": "6"
+       }
+      ],
+      "minNumSel": 1,
+      "maxNumSel": 1
+     },
+     "pollResult": {
+      "pollId": 134,
+      "questionId": 9,
+      "choices": [
+       {
+        "choiceId": 1002,
+        "voteCount": 22,
+        "votePercentage": 16.541353
+       },
+       {
+        "choiceId": 1001,
+        "voteCount": 108,
+        "votePercentage": 81.203008
+       },
+       {
+        "choiceId": 1003,
+        "voteCount": 3,
+        "votePercentage": 2.255639
+       },
+       {
+        "choiceId": 1004,
+        "voteCount": 0,
+        "votePercentage": 0.0
+       },
+       {
+        "choiceId": 1005,
+        "voteCount": 0,
+        "votePercentage": 0.0
+       },
+       {
+        "choiceId": 1006,
+        "voteCount": 0,
+        "votePercentage": 0.0
+       }
+      ]
+     },
+     "correctAnswer": null
+    }
+   ],
+   "pollType": "single",
+   "pollCountdown": null
+  },
+  "currentLeaderboard": null
+ }
+}

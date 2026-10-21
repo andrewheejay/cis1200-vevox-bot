@@ -1,0 +1,7 @@
+state.json
+*.pdf
+runs/
+.venv/
+__pycache__/
+.superpowers/
+.pytest_cache/
