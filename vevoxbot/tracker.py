@@ -6,7 +6,8 @@ from .config import BLIND_ANSWER, CLASS_LEN, SKIP_AFTER
 from .models import Sheet
 
 MIN_TOP_PCT = 40.0  # the class's favourite must have at least this share...
-MIN_LEAD = 15.0  # ...and beat the bot's answer by this many points before we trust it
+MIN_LEAD = 15.0  # ...and beat the bot's answer by this many points...
+MAX_OURS = 20.0  # ...and the class must have all but rejected ours: trick questions still draw 30%+ (lec22 p27: 37%)
 
 
 @dataclass
@@ -45,7 +46,7 @@ class Tracker:
         top_pct = max(percentages)
         top = percentages.index(top_pct) + 1
         ours = percentages[pick.answer - 1] if pick.answer <= len(percentages) else 0.0
-        if top == pick.answer or top_pct < MIN_TOP_PCT or top_pct - ours < MIN_LEAD:
+        if top == pick.answer or top_pct < MIN_TOP_PCT or top_pct - ours < MIN_LEAD or ours >= MAX_OURS:
             return None
         polls = self.sheet.polls
         fits = [j for j, p in enumerate(polls) if p.answer == top and p.kind == "graded"]
