@@ -1,12 +1,13 @@
 """Keeps the bot's place in the answer sheet when polls arrive with only numbered buttons."""
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .config import BLIND_ANSWER, CLASS_LEN, SKIP_AFTER
 from .models import Sheet
 
 MIN_TOP_PCT = 40.0  # the class's favourite must have at least this share...
 MIN_LEAD = 15.0  # ...and beat the bot's answer by this many points...
+LATE_MARGIN = timedelta(minutes=10)  # a bot starting mid-class assumes questions due this long before it are done
 MAX_OURS = 20.0  # ...and the class must have all but rejected ours: trick questions still draw 30%+ (lec22 p27: 37%)
 
 
@@ -18,10 +19,13 @@ class Pick:
 
 
 class Tracker:
-    def __init__(self, sheet: Sheet, class_start: datetime):
+    def __init__(self, sheet: Sheet, class_start: datetime, started_at: datetime | None = None):
         self.sheet = sheet
         self.class_start = class_start
         self.pointer = 0
+        if started_at is not None:  # e.g. the Mac woke up at 10:40: don't answer slide 4 to slide 25's poll
+            while self.pointer < len(sheet.polls) and self.expected(self.pointer) < started_at - LATE_MARGIN:
+                self.pointer += 1
 
     def expected(self, i: int) -> datetime:
         return self.class_start + CLASS_LEN * (self.sheet.polls[i].page / self.sheet.pages)

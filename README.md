@@ -7,8 +7,11 @@ so attendance counts on mornings you sleep through. Design: `docs/superpowers/sp
 - **Evening before class** (Sun/Tue/Thu ~9:17 pm ET, `evening` workflow): checks the saved Vevox login
   still works and builds the next class's answer sheet with Claude (falls back to a slide parser),
   committing it to `sheets/`. **If this run fails, GitHub emails you** — usually it means the login expired.
-- **Class days** (~9:41 am ET, `class` workflow): opens Vevox headlessly, votes once per poll within a
-  few seconds, and writes a summary (Actions run page → Summary; full log in the run's artifact).
+- **Class days** (~9:41 am ET, `class` workflow): opens Vevox headlessly and, 5 s after each poll opens, votes
+  unless an answer is already in (the Mac's), then writes a summary (Actions run page → Summary; full log in the
+  run's artifact). With no Mac around, every poll still gets its answer within ~5 s.
+- **Your Mac, if it's awake** (10:05 Mon/Wed/Fri, after `uv run bot mac-install`): answers each poll the moment it
+  opens. Plugged in, lid open. If it's asleep the cloud covers; if it wakes mid-class it joins from the current slide.
 
 ## One-time setup
 ```sh
@@ -29,8 +32,9 @@ uv run bot sheet          # preview the next class's answer sheet
 uv run bot check          # is the saved login still good?
 ```
 
-## Running on the Mac instead
-Same code: `caffeinate -ims uv run bot run` on the morning of class (Mac plugged in, lid open).
+## The Mac
+`uv run bot mac-install` once (a launchd job, `~/Library/LaunchAgents/com.andrewheejay.cis1200-vevox-bot.plist`);
+`uv run bot mac-uninstall` to stop. Log: `runs/mac.log`. `bot off` switches off both the Mac and the cloud.
 `bot run --date YYYY-MM-DD --dry-run --no-wait` with `VEVOXBOT_MINUTES=2` is a safe smoke test.
 
 ## Rules it follows

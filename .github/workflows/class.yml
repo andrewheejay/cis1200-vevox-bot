@@ -60,7 +60,7 @@ jobs:
           IN_DRY: ${{ inputs.dry_run }}
           IN_MINUTES: ${{ inputs.minutes }}
         run: |
-          args=()
+          args=(--defer 5)  # the Mac answers first when it's awake; the cloud steps in 5 s later if it hasn't
           if [ "$MANUAL" = "true" ]; then
             args+=(--no-wait); export VEVOXBOT_MINUTES="$IN_MINUTES"
             [ -n "$IN_DATE" ] && args+=(--date "$IN_DATE")

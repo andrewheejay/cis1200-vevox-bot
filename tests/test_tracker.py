@@ -92,3 +92,13 @@ def test_no_correction_when_the_class_falls_for_a_trick_question(tracker):
     assert (LEC22.polls[pick.index].page, pick.answer) == (27, 1)
     assert tracker.correct(pick, 6, [37.0, 60.0, 1.0, 2.0, 0, 0], opened_at=at(11, 1)) is None
     assert LEC22.polls[tracker.pointer].page == 39
+
+
+def test_late_start_skips_questions_already_past():
+    """The Mac woke up at 10:36: slide 4 (due 10:21) is gone, slide 25 (due 10:52) is next."""
+    t = Tracker(LEC22, class_start=at(10, 15), started_at=at(10, 36))
+    assert LEC22.polls[t.pointer].page == 25
+
+
+def test_on_time_start_keeps_every_question():
+    assert Tracker(LEC22, class_start=at(10, 15), started_at=at(10, 12)).pointer == 0

@@ -60,6 +60,9 @@ class FakeVevox:
     def vote(self, n):
         return False
 
+    def voted(self):
+        return False
+
 
 @pytest.fixture
 def fake_vevox(monkeypatch, tmp_path):
@@ -102,3 +105,11 @@ def test_run_without_any_poll_updates_is_flagged(fake_vevox, monkeypatch, capsys
     monkeypatch.setattr(cli, "load_or_build", lambda day, lec, use_claude: cli.Sheet(22, lec.day, 40, "manual", []))
     assert cli.main(["run", "--date", "2026-10-21", "--no-wait"]) == 1
     assert "never received" in capsys.readouterr().out.lower()
+
+
+def test_run_after_class_is_over_does_nothing(no_browser, monkeypatch, capsys):
+    """A Mac that wakes up at 1 pm shouldn't open Vevox for a class that ended at 11:15."""
+    monkeypatch.setenv("SKIP_DATES", "")
+    monkeypatch.delenv("VEVOXBOT_MINUTES", raising=False)
+    assert cli.main(["run", "--date", "2026-10-19"]) == 0
+    assert "over" in capsys.readouterr().out

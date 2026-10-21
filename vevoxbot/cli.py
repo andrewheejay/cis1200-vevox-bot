@@ -1,6 +1,7 @@
-"""bot login | check | sheet | run | off | on"""
+"""bot login | check | sheet | run | off | on | mac-install | mac-uninstall"""
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -141,6 +142,11 @@ def cmd_run(args) -> int:
     if day in skip_dates():
         print(f"{day}: bot switched off for this class.")
         return 0
+    minutes = os.environ.get("VEVOXBOT_MINUTES")  # for test runs: stop after N minutes instead of at 11:20
+    end = datetime.now(ET) + timedelta(minutes=float(minutes)) if minutes else at(day, RUN_END)
+    if datetime.now(ET) >= end:  # e.g. the Mac woke up after class
+        print(f"{day}: class is over.")
+        return 0
     lec = class_lecture(day)
     if lec is None:
         print(f"{day}: no class.")
@@ -151,8 +157,6 @@ def cmd_run(args) -> int:
         log(f"couldn't build the answer sheet ({e!r}); every poll gets the blind answer")
         sheet = Sheet(lecture=0, day=day, pages=1, source="none", polls=[])
     log(f"lec{sheet.lecture:02d}: {len(sheet.polls)} polls on the sheet (by {sheet.source})")
-    minutes = os.environ.get("VEVOXBOT_MINUTES")  # for test runs: stop after N minutes instead of at 11:20
-    end = datetime.now(ET) + timedelta(minutes=float(minutes)) if minutes else at(day, RUN_END)
     RUNS.mkdir(exist_ok=True)
     records, code = [], 0
     try:
@@ -163,9 +167,9 @@ def cmd_run(args) -> int:
             log("signed in to Vevox")
             while not args.no_wait and datetime.now(ET) < at(day, RUN_START):
                 v.wait(min(30, (at(day, RUN_START) - datetime.now(ET)).total_seconds()))
-            tracker = Tracker(sheet, class_start=at(day, CLASS_START))
+            tracker = Tracker(sheet, class_start=at(day, CLASS_START), started_at=datetime.now(ET))
             records = run_class(v, tracker, end, now=lambda: datetime.now(ET), sleep=v.wait, log=log,
-                                dry_run=args.dry_run)
+                                dry_run=args.dry_run, defer=args.defer)
             if v.latest is None:
                 log("WARNING: never received a poll update from Vevox during the run")
                 code = 1
@@ -192,6 +196,27 @@ def cmd_on(args) -> int:
     return 0
 
 
+def cmd_mac_install(args) -> int:
+    from .mac import install
+
+    uv = shutil.which("uv")
+    if not uv:
+        print("Can't find uv on PATH.")
+        return 2
+    path = install(REPO_DIR, uv)
+    print(f"Mac backup on: answers first at 10:05 Mon/Wed/Fri whenever this Mac is awake ({path}).")
+    print("Keep it plugged in with the lid open on class mornings. Log: runs/mac.log. Undo: bot mac-uninstall")
+    return 0
+
+
+def cmd_mac_uninstall(args) -> int:
+    from .mac import uninstall
+
+    uninstall()
+    print("Mac backup off; the cloud answers on its own.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="bot", description="CIS 1200 Vevox attendance bot")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -206,6 +231,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--date", type=date.fromisoformat)
     p.add_argument("--dry-run", action="store_true", help="watch and log, never click")
     p.add_argument("--no-wait", action="store_true", help="start answering immediately")
+    p.add_argument("--defer", type=float, default=0, metavar="SECONDS",
+                   help="wait this long after a poll opens, then click only if no answer is in yet (the cloud, behind the Mac)")
     p.set_defaults(fn=cmd_run)
     p = sub.add_parser("off", help="switch the bot off for a class (default: next class day)")
     p.add_argument("date", nargs="?", type=date.fromisoformat)
@@ -213,6 +240,9 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("on", help="switch the bot back on for a class")
     p.add_argument("date", type=date.fromisoformat)
     p.set_defaults(fn=cmd_on)
+    sub.add_parser("mac-install", help="answer from this Mac too, first, whenever it's awake at class time"
+                   ).set_defaults(fn=cmd_mac_install)
+    sub.add_parser("mac-uninstall", help="stop answering from this Mac").set_defaults(fn=cmd_mac_uninstall)
     args = ap.parse_args(argv)
     return args.fn(args)
 
