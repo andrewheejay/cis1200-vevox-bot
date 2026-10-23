@@ -1,0 +1,29 @@
+{
+  "lecture": 23,
+  "day": "2026-10-23",
+  "pages": 46,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 14,
+      "choices": 4,
+      "answer": 4,
+      "kind": "graded",
+      "q": "Value of ans: Counter x; x.inc(); int ans = x.inc();"
+    },
+    {
+      "page": 15,
+      "choices": 4,
+      "answer": 3,
+      "kind": "graded",
+      "q": "Value of ans with x, alias y, three inc() calls"
+    },
+    {
+      "page": 36,
+      "choices": 3,
+      "answer": 3,
+      "kind": "graded",
+      "q": "Which static method can we add to Counter? (A/B/C)"
+    }
+  ]
+}
