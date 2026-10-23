@@ -4,10 +4,13 @@ Answers the CIS 1200 Vevox polls (Mon/Wed/Fri 10:15–11:15 ET) from that day's 
 so attendance counts on mornings you sleep through. Design: `docs/superpowers/specs/`.
 
 ## How it runs
-- **Evening before class** (Sun/Tue/Thu ~9:17 pm ET, `evening` workflow): checks the saved Vevox login
+GitHub's own schedule runs hours late, so a free cron-job.org timer starts both workflows on time (set up below).
+GitHub's schedule stays as a last resort; a run that starts outside its window does nothing.
+
+- **Evening before class** (Sun/Tue/Thu 9:00 pm ET, `evening` workflow): checks the saved Vevox login
   still works and builds the next class's answer sheet with Claude (falls back to a slide parser),
   committing it to `sheets/`. **If this run fails, GitHub emails you** — usually it means the login expired.
-- **Class days** (~9:41 am ET, `class` workflow): opens Vevox headlessly and, 5 s after each poll opens, votes
+- **Class days** (9:40 am ET, `class` workflow): opens Vevox headlessly and, 5 s after each poll opens, votes
   unless an answer is already in (the Mac's), then writes a summary (Actions run page → Summary; full log in the
   run's artifact). With no Mac around, every poll still gets its answer within ~5 s.
 - **Your Mac, if it's awake** (10:05 Mon/Wed/Fri, after `uv run bot mac-install`): answers each poll the moment it
@@ -22,6 +25,20 @@ claude setup-token             # in your own terminal; copy the token it prints
 gh secret set CLAUDE_CODE_OAUTH_TOKEN   # paste it
 ```
 Re-run `uv run bot login --upload` whenever the evening check says the login expired.
+
+### The on-time timer (cron-job.org)
+1. GitHub token: https://github.com/settings/personal-access-tokens/new. Only select repositories: this repo.
+   Repository permissions: **Actions: Read and write** (nothing else). Expiry: end of semester.
+2. On cron-job.org, two jobs, each with time zone `America/New_York`, request method `POST`, and headers
+   `Authorization: Bearer <token>`, `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`,
+   `Content-Type: application/json`:
+
+| Job | Days, time | URL (`https://api.github.com/repos/andrewheejay/cis1200-vevox-bot/actions/workflows/…`) | Body |
+|---|---|---|---|
+| class | Mon, Wed, Fri 09:40 | `class.yml/dispatches` | `{"ref":"main","inputs":{"real":"true"}}` |
+| evening | Sun, Tue, Thu 21:00 | `evening.yml/dispatches` | `{"ref":"main"}` |
+
+GitHub answers `204` when it starts the run. A class run started outside 9:30–11:00 ET does nothing.
 
 ## Day to day
 ```sh
