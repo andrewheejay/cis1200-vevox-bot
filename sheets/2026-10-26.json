@@ -1,0 +1,43 @@
+{
+  "lecture": 24,
+  "day": "2026-10-26",
+  "pages": 34,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 10,
+      "choices": 3,
+      "answer": 3,
+      "kind": "graded",
+      "q": "Which static method can we add to the Counter class?"
+    },
+    {
+      "page": 22,
+      "choices": 6,
+      "answer": 6,
+      "kind": "graded",
+      "q": "Value of ans for a[a.length] with a={1,2,3,4}"
+    },
+    {
+      "page": 23,
+      "choices": 6,
+      "answer": 5,
+      "kind": "graded",
+      "q": "Value of ans for null array a.length"
+    },
+    {
+      "page": 24,
+      "choices": 6,
+      "answer": 4,
+      "kind": "graded",
+      "q": "Value of ans for empty array a.length"
+    },
+    {
+      "page": 25,
+      "choices": 6,
+      "answer": 4,
+      "kind": "graded",
+      "q": "Value of ans after aliasing b[0]=0, reading a[0]"
+    }
+  ]
+}
