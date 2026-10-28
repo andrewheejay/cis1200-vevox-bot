@@ -1,0 +1,15 @@
+{
+  "lecture": 25,
+  "day": "2026-10-28",
+  "pages": 19,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 7,
+      "choices": 6,
+      "answer": 4,
+      "kind": "graded",
+      "q": "Value of ans after aliasing b[0]=0, ans=a[0]"
+    }
+  ]
+}
