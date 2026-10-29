@@ -64,7 +64,7 @@ def parse_frame(text: str) -> PollUpdate | None:
 
 
 class VevoxPage:
-    """Headless Vevox session as Andrew. Use as a context manager."""
+    """Headless Vevox session as the signed-in student. Use as a context manager."""
 
     def __init__(self, state_file: Path, headless: bool = True, log=print, record: Path | None = None):
         self.state_file, self.headless, self.log, self.record = state_file, headless, log, record

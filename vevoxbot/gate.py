@@ -37,7 +37,7 @@ def _gh_variable() -> str:
 
 
 def skip_dates() -> set[date]:
-    """Class days Andrew switched the bot off for (repo variable SKIP_DATES, or the env var in Actions)."""
+    """Class days the bot has been switched off for (repo variable SKIP_DATES, or the env var in Actions)."""
     if "SKIP_DATES" in os.environ:
         return _parse_dates(os.environ["SKIP_DATES"])
     try:
