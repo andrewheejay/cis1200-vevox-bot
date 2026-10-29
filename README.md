@@ -9,11 +9,12 @@ closed. Optionally your Mac answers too, faster, whenever it happens to be awake
 - A Penn account enrolled in CIS 1200 (PennKey + Duo for the one-time login).
 - A GitHub account and the `gh` CLI, signed in (`gh auth login`; say yes to authenticating Git).
 - [`uv`](https://docs.astral.sh/uv/) and Python 3.12 or newer.
+- A free [cron-job.org](https://cron-job.org) account. It starts the runs on time; GitHub's own schedule
+  runs too late to be useful (see step 5).
 - Optional: [Claude Code](https://docs.claude.com/en/docs/claude-code) with a Claude Pro or Max plan. Claude
   reads the slides and works out the answers. Without it, a regex parser builds the answer sheet from the
   `Answer:` lines printed on the slides, which is worse but still works.
 - Optional: a Mac, for the faster local answerer.
-- Optional: a free [cron-job.org](https://cron-job.org) account, so the runs start on time (see step 5).
 
 ## Setup
 
@@ -53,8 +54,9 @@ gh secret set CLAUDE_CODE_OAUTH_TOKEN   # paste it
 The token draws on your Claude plan, not a separate API bill. Skip this step and the parser builds the sheets.
 
 ### 5. Start the runs on time (cron-job.org)
-GitHub's own schedule often fires an hour or more late, which is too late for a 10:15 class. A free
-cron-job.org timer starts both workflows at the right minute; GitHub's schedule stays as a last resort.
+This step is required. GitHub's own schedule often fires an hour or more late, which is too late for a
+10:15 class, so without the timer the bot misses most polls. A free cron-job.org timer starts both
+workflows at the right minute; GitHub's schedule stays only as a last resort.
 
 1. Create a fine-grained GitHub token at https://github.com/settings/personal-access-tokens/new.
    Only select repositories: your copy. Repository permissions: **Actions: Read and write**, nothing else.
