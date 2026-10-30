@@ -1,0 +1,15 @@
+{
+  "lecture": 26,
+  "day": "2026-10-30",
+  "pages": 46,
+  "source": "parser",
+  "polls": [
+    {
+      "page": 33,
+      "choices": 2,
+      "answer": 1,
+      "kind": "graded",
+      "q": "Assume Circle implements the Displaceable interface."
+    }
+  ]
+}
