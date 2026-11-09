@@ -1,0 +1,36 @@
+{
+  "lecture": 29,
+  "day": "2026-11-09",
+  "pages": 56,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 26,
+      "choices": 4,
+      "answer": 2,
+      "kind": "graded",
+      "q": "What gets printed: C c = new D(); c.printName();"
+    },
+    {
+      "page": 32,
+      "choices": 3,
+      "answer": 2,
+      "kind": "graded",
+      "q": "What gets printed with C c = new E(); c.printName();"
+    },
+    {
+      "page": 35,
+      "choices": 2,
+      "answer": 2,
+      "kind": "graded",
+      "q": "What gets printed: l.contains(new Point(1,2))"
+    },
+    {
+      "page": 47,
+      "choices": 2,
+      "answer": 2,
+      "kind": "graded",
+      "q": "Does Points equal ColoredPoints version of equals really work? (1=yes, 2=no)"
+    }
+  ]
+}
