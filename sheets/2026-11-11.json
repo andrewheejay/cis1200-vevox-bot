@@ -1,0 +1,29 @@
+{
+  "lecture": 30,
+  "day": "2026-11-11",
+  "pages": 43,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 16,
+      "choices": 2,
+      "answer": 2,
+      "kind": "graded",
+      "q": "Does this really work? (1=yes, 2=no)"
+    },
+    {
+      "page": 31,
+      "choices": 5,
+      "answer": 3,
+      "kind": "graded",
+      "q": "What is printed by iteratorExample()?"
+    },
+    {
+      "page": 33,
+      "choices": 5,
+      "answer": 5,
+      "kind": "graded",
+      "q": "What is printed by nextNextExample()?"
+    }
+  ]
+}
