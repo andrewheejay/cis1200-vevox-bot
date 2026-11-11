@@ -119,8 +119,8 @@ uv run bot check          # is the saved login still good?
 - **A class run says "Not class time; nothing to do."**: it was started outside 9:30–11:00 ET. Check the
   cron-job.org job's time zone and schedule.
 - **No sheet for tomorrow**: the slides weren't posted yet when the evening run happened. The class run builds
-  one itself if they are up by class time (with Claude before 10:12, with the parser after); if they still
-  aren't, every poll gets the blind answer.
+  one itself if they are up at 9:40, and looks once more at 10:05 (both with Claude); if they still aren't up,
+  every poll gets the blind answer.
 - **Safe local smoke test** (watches for two minutes, never clicks):
   ```sh
   VEVOXBOT_MINUTES=2 uv run bot run --dry-run --no-wait

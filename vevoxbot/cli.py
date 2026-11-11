@@ -8,7 +8,7 @@ import tempfile
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
-from .config import CLASS_DAYS, CLASS_START, ET, REPO_DIR, RUN_END, RUN_START, SESSION_URL, state_path
+from .config import CLASS_DAYS, CLASS_START, ET, REPO_DIR, RUN_END, RUN_START, SESSION_URL, SHEET_RETRY, state_path
 from .gate import next_class_day, set_skip, skip_dates
 from .live import run_class, summary_markdown
 from .models import Lecture, Sheet
@@ -26,8 +26,12 @@ def log(msg: str) -> None:
     print(f"{datetime.now(ET):%H:%M:%S} {msg}", flush=True)
 
 
+def now() -> datetime:
+    return datetime.now(ET)
+
+
 def today() -> date:
-    return datetime.now(ET).date()
+    return now().date()
 
 
 def at(day: date, t: time) -> datetime:
@@ -109,7 +113,22 @@ def load_or_build(day: date, lec: Lecture, use_claude: bool) -> Sheet:
         sheet.save(path)
         return sheet
     log("No slides posted: every poll gets the blind answer.")
+    return blind_sheet(day)
+
+
+def blind_sheet(day: date) -> Sheet:
     return Sheet(lecture=0, day=day, pages=1, source="none", polls=[])
+
+
+def sheet_for(day: date, lec: Lecture, use_claude: bool) -> Sheet:
+    """Today's answer sheet, or the blind one if it can't be built; never raises."""
+    try:
+        sheet = load_or_build(day, lec, use_claude=use_claude)
+    except Exception as e:
+        log(f"couldn't build the answer sheet ({e!r}); every poll gets the blind answer")
+        sheet = blind_sheet(day)
+    log(f"lec{sheet.lecture:02d}: {len(sheet.polls)} polls on the sheet (by {sheet.source})")
+    return sheet
 
 
 def class_lecture(day: date) -> Lecture | None:
@@ -143,20 +162,16 @@ def cmd_run(args) -> int:
         print(f"{day}: bot switched off for this class.")
         return 0
     minutes = os.environ.get("VEVOXBOT_MINUTES")  # for test runs: stop after N minutes instead of at 11:20
-    end = datetime.now(ET) + timedelta(minutes=float(minutes)) if minutes else at(day, RUN_END)
-    if datetime.now(ET) >= end:  # e.g. the Mac woke up after class
+    end = now() + timedelta(minutes=float(minutes)) if minutes else at(day, RUN_END)
+    if now() >= end:  # e.g. the Mac woke up after class
         print(f"{day}: class is over.")
         return 0
     lec = class_lecture(day)
     if lec is None:
         print(f"{day}: no class.")
         return 0
-    try:  # never call Claude once class has started: it can take minutes
-        sheet = load_or_build(day, lec, use_claude=datetime.now(ET) < at(day, RUN_START))
-    except Exception as e:
-        log(f"couldn't build the answer sheet ({e!r}); every poll gets the blind answer")
-        sheet = Sheet(lecture=0, day=day, pages=1, source="none", polls=[])
-    log(f"lec{sheet.lecture:02d}: {len(sheet.polls)} polls on the sheet (by {sheet.source})")
+    sheet = sheet_for(day, lec, use_claude=now() < at(day, RUN_START))  # Claude can take minutes: not mid-class
+    built_at = now()
     RUNS.mkdir(exist_ok=True)
     records, code = [], 0
     try:
@@ -165,10 +180,15 @@ def cmd_run(args) -> int:
                 log("LOGIN EXPIRED: Vevox sent the bot to PennKey. Run: bot login --upload")
                 return 2
             log("signed in to Vevox")
-            while not args.no_wait and datetime.now(ET) < at(day, RUN_START):
-                v.wait(min(30, (at(day, RUN_START) - datetime.now(ET)).total_seconds()))
-            tracker = Tracker(sheet, class_start=at(day, CLASS_START), started_at=datetime.now(ET))
-            records = run_class(v, tracker, end, now=lambda: datetime.now(ET), sleep=v.wait, log=log,
+            while not args.no_wait and now() < at(day, RUN_START):
+                if sheet.source == "none" and built_at < at(day, SHEET_RETRY) <= now():
+                    log("no answer sheet yet; slides sometimes go up in the morning, so looking again")
+                    lec = class_lecture(day) or lec
+                    sheet = sheet_for(day, lec, use_claude=True)
+                    built_at = now()
+                v.wait(min(30, (at(day, RUN_START) - now()).total_seconds()))
+            tracker = Tracker(sheet, class_start=at(day, CLASS_START), started_at=now())
+            records = run_class(v, tracker, end, now=now, sleep=v.wait, log=log,
                                 dry_run=args.dry_run, defer=args.defer)
             if v.latest is None:
                 log("WARNING: never received a poll update from Vevox during the run")
