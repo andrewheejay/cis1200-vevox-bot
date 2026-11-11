@@ -47,9 +47,11 @@ jobs:
       - name: Install browser, pdftotext, Claude Code
         if: steps.gate.outputs.go == 'true'
         run: |
-          python -m playwright install --with-deps chromium
-          sudo apt-get install -y -q poppler-utils
-          npm install -g @anthropic-ai/claude-code
+          # Only the browser is essential. Its apt packages, pdftotext and Claude Code are best-effort: a runner
+          # whose apt mirrors won't resolve (2026-11-11) must still make it into Vevox for attendance.
+          python -m playwright install --with-deps chromium || python -m playwright install chromium
+          sudo apt-get install -y -q poppler-utils || echo "::warning::no pdftotext: can't build a sheet today"
+          npm install -g @anthropic-ai/claude-code || echo "::warning::no Claude Code: the parser builds any sheet"
       - name: Restore Vevox login
         if: steps.gate.outputs.go == 'true'
         env:
