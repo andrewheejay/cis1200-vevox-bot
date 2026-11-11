@@ -12,6 +12,7 @@ ET = ZoneInfo("America/New_York")
 CLASS_DAYS = {0, 2, 4}  # Mon, Wed, Fri
 CLASS_START = time(10, 15)
 CLASS_LEN = timedelta(minutes=60)
+SHEET_RETRY = time(10, 5)  # a run that found no slides looks once more, before the polls start
 RUN_START = time(10, 12)
 RUN_END = time(11, 20)
 SKIP_AFTER = timedelta(minutes=20)
