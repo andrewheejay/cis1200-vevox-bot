@@ -1,0 +1,29 @@
+{
+  "lecture": 31,
+  "day": "2026-11-13",
+  "pages": 81,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 23,
+      "choices": 4,
+      "answer": 4,
+      "kind": "graded",
+      "q": "What happens if we do (new C()).foo() with uncaught RuntimeException?"
+    },
+    {
+      "page": 75,
+      "choices": 8,
+      "answer": 6,
+      "kind": "graded",
+      "q": "Which methods need a throws clause?"
+    },
+    {
+      "page": 79,
+      "choices": 4,
+      "answer": 4,
+      "kind": "graded",
+      "q": "What happens with try/catch/finally in bar, then foo?"
+    }
+  ]
+}
