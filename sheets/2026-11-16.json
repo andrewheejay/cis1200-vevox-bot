@@ -1,0 +1,22 @@
+{
+  "lecture": 32,
+  "day": "2026-11-16",
+  "pages": 65,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 44,
+      "choices": 8,
+      "answer": 6,
+      "kind": "graded",
+      "q": "Which methods need a throws clause?"
+    },
+    {
+      "page": 48,
+      "choices": 4,
+      "answer": 4,
+      "kind": "graded",
+      "q": "What happens if we do (new C()).foo() with finally?"
+    }
+  ]
+}
