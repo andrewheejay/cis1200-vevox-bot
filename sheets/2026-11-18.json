@@ -1,0 +1,15 @@
+{
+  "lecture": 33,
+  "day": "2026-11-18",
+  "pages": 20,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 20,
+      "choices": 4,
+      "answer": 4,
+      "kind": "graded",
+      "q": "Which combination of properties forms a useful invariant for WordScanner fields?"
+    }
+  ]
+}
