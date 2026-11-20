@@ -1,0 +1,22 @@
+{
+  "lecture": 34,
+  "day": "2026-11-20",
+  "pages": 36,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 6,
+      "choices": 4,
+      "answer": 2,
+      "kind": "opinion",
+      "q": "Have you ever used the Java Swing library to build a GUI application?"
+    },
+    {
+      "page": 28,
+      "choices": 4,
+      "answer": 2,
+      "kind": "graded",
+      "q": "Which ways make sense to construct an object of an inner class type?"
+    }
+  ]
+}
