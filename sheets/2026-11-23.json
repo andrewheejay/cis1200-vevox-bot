@@ -1,0 +1,29 @@
+{
+  "lecture": 35,
+  "day": "2026-11-23",
+  "pages": 32,
+  "source": "claude",
+  "polls": [
+    {
+      "page": 16,
+      "choices": 4,
+      "answer": 2,
+      "kind": "graded",
+      "q": "Which make sense as ways to construct an inner class object?"
+    },
+    {
+      "page": 31,
+      "choices": 2,
+      "answer": 1,
+      "kind": "graded",
+      "q": "True or False: can fill hole so ac contains new AbstractClass object"
+    },
+    {
+      "page": 32,
+      "choices": 3,
+      "answer": 1,
+      "kind": "opinion",
+      "q": "How does the user interact with the game?"
+    }
+  ]
+}
